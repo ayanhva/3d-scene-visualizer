@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!-- 
+    CSCI 2408 Computer Graphics Fall 2022 
+    (c)2022 by Ayan Hashimova, Amina Shikhaliyeva, Sadiq Latifli, Sevinj Aliyeva
+    Submitted in partial fulfillment of the requirements of the course.
+
+    Contributions:
+    Ayan Hashimova - 40% - implemented tree structure, webGL display of the tree, perspective/camera view, found normals,
+                          accordingly implemented directional lighting and transformations, and added ground structure
+    Amina Shikhaliyeva - 30% - did sunrise sunset, kept track and definition of faces, worked on directional lighting,
+                            did fps camera, worked on randomizer of seed, assisted Ayan Hashimova in camera view
+    Sadig Latifli - 20% - documented code, did randomizer of seed, worked with rotation of the tree, filmed demo video
+    Sevinj Aliyeva - 10% - did research and joined discussions
+
+    Link: https://www.facebook.com/100057317812817/videos/1294856511303576/
+-->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+<title>Homework 3 - WebGL team project</title>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+    attribute vec4 vPosition;
+    attribute vec4 vColor;
+    attribute vec3 vNormal;
+
+    // the model matrix
+    uniform mat4 modelMatrix;
+    // the view matrix - view from camera
+    uniform mat4 viewMatrix;
+    // the projection matrix - for setting perspective (angles & plane information)
+    uniform mat4 projectionMatrix;
+    // vector to the light source
+    uniform vec3 vLight;
+    // the inverse transpose matrix for smoother lighting
+    uniform mat4 invTranspMatrix;
+
+    // the color to pass to fragment shader
+    varying vec4 colorToFrag;
+    // brightness indicator to be passed to fragment shader
+    varying float brightness;
+
+    void main() {
+        // Just use the vertex as is.
+        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vPosition;
+        colorToFrag = vColor;
+
+        // brightness is dependent on the cosine of angle between the normal and the direction to the light source
+        // which is equal to the dot product of them
+        // but the values need to be normalized, because theymay be more than needed
+        // and matrix is multiplied with the normal, in order for it to work in transformed situations
+        // the maximum is found for the object/tree not to go completely black
+        brightness = max(dot(normalize(vLight), normalize(mat3(invTranspMatrix) * vNormal)), 0.0);
+    }
+</script>
+
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+    // Set how many bits used for float values. Will not work otherwise.
+    precision mediump float;
+
+    // the color got from vertex shader
+    varying vec4 colorToFrag;
+    // brightness indicator coming from the vertex shader
+    varying float brightness;
+
+    void main() {
+        // Use the color & brightness received from vertex shader.
+        // 0.25 and 0.75 and ambient and diffuse coefficients
+        gl_FragColor = (colorToFrag * 0.25) + (colorToFrag * brightness * 0.75);
+        gl_FragColor.a = 1.0;
+    }
+</script>
+
+<script type="text/javascript" src="common/webgl-utils.js"></script>
+<script type="text/javascript" src="common/initShaders.js"></script>
+<script type="text/javascript" src="common/MV.js"></script>
+<script type="text/javascript" src="treeoflife.js"></script>
+</head>
+
+<body style="background-color: #888888;">
+    <center>
+        <canvas id="gl-canvas" width="1000" height="800">
+            Sorry ... your browser doesn't support the HTML5 canvas element.
+        </canvas>
+    </center>
+</body>
+</html>
